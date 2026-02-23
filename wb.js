@@ -1,72 +1,46 @@
-// Quantumult X - 微博北京IP评论过滤脚本
-// 功能：仅保留 user.location 或 source 含“北京”的评论（主+回复）
-// 基于2026-02抓包结构，保留广告等非评论项
-// 作者：Grok 参考你的旧脚本 + 抓包分析
+// Quantumult X - 微博仅保留北京主评论 + 移除所有广告
+// 按你要求：只处理主评论，不处理子回复；广告全部删除
 
 let body = $response.body;
 if (!body) $done({});
 
 try {
   let obj = JSON.parse(body);
+  let kept = 0, removedAd = 0, removedNonBj = 0;
 
   if (obj?.items?.length > 0) {
-    let kept = 0;
-    let filtered = 0;
+    obj.items = obj.items.filter(item => {
+      // 1. 彻底移除广告
+      if (item.type === "trend" || 
+          item.data?.is_ad === 1 || 
+          (item.data?.mblogtype === 1 && item.data?.is_ad)) {
+        removedAd++;
+        return false;
+      }
 
-    let newItems = obj.items.filter(item => {
-      // 保留非评论项（如广告 trend）
+      // 2. 非评论项全部保留
       if (item.type !== "comment" || !item.data) {
         return true;
       }
 
+      // 3. 只判断主评论是否北京
       const data = item.data;
-      let keepMain = false;
-
-      // 检查主评论
-      const mainLoc = data.user?.location || "";
-      const mainSrc = data.source || "";
-      if (mainLoc.includes("北京") || mainSrc.includes("北京")) {
-        keepMain = true;
-      }
-
-      // 处理子回复
-      let newReplies = [];
-      if (data.comments && data.comments.length > 0) {
-        newReplies = data.comments.filter(reply => {
-          const replyLoc = reply.user?.location || "";
-          const replySrc = reply.source || "";
-          const isBeijingReply = replyLoc.includes("北京") || replySrc.includes("北京");
-          if (isBeijingReply) {
-            kept++;
-          } else {
-            filtered++;
-          }
-          return isBeijingReply;
-        });
-        data.comments = newReplies;
-      }
-
-      // 主评论是北京 或 有北京子回复 → 保留
-      if (keepMain || newReplies.length > 0) {
+      const loc = (data.user?.location || "") + (data.source || "");
+      
+      if (loc.includes("北京")) {
         kept++;
-        return true;
+        return true;   // 保留整个主评论 + 所有子回复
       } else {
-        filtered++;
-        return false;
+        removedNonBj++;
+        return false;  // 删除整个项
       }
     });
-
-    console.log(`[北京评论过滤] 过滤前: ${obj.items.length} | 保留: ${kept} | 移除: ${filtered}`);
-    obj.items = newItems;
-
-    // 可选：过滤后若无评论，停止翻页（取消注释）
-    // if (kept === 0) {
-    //   if (obj.loadedInfo?.paging) obj.loadedInfo.paging.has_more = false;
-    // }
   }
+
+  console.log(`[北京主评论过滤] ✅ 广告移除: ${removedAd} | 非北京主评论移除: ${removedNonBj} | 保留: ${kept}`);
 
   $done({ body: JSON.stringify(obj) });
 } catch (e) {
-  console.log(`[北京评论过滤] 错误: ${e.message || e}`);
+  console.log(`[北京主评论过滤] 错误: ${e}`);
   $done({ body });
 }
