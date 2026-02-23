@@ -14,10 +14,6 @@ try {
     obj.data.comments.forEach(comment => {
       // 检查主评论
       if (comment.ip_location === "北京") {
-        // 处理子评论：只保留北京的子评论
-        if (comment.sub_comments?.length > 0) {
-          comment.sub_comments = comment.sub_comments.filter(sub => sub.ip_location === "北京");
-        }
         
         newComments.push(comment);
       }
