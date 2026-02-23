@@ -22,10 +22,10 @@ try {
     console.log("filter after：" + newComments.length);
     obj.data.comments = newComments;
 
-    // 如果过滤后没评论了，停止翻页
-    if (newComments.length === 0) {
-      obj.data.has_more = false;
-    }
+    // // 如果过滤后没评论了，停止翻页
+    // if (newComments.length === 0) {
+    //   obj.data.has_more = false;
+    // }
   }
 
   $done({ body: JSON.stringify(obj) });
