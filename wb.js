@@ -25,10 +25,10 @@ try {
 
       // 3. 只判断主评论是否北京
       const data = item.data;
-      // const loc = (data.user?.location || "") + (data.source || "");
-      const loc = (data.source || "");
+      const loc = (data.user?.location || "") + (data.source || "");
+      // const loc = (data.source || "");
       
-      if (loc.includes("北京")) {
+      if (loc.includes("来自北京")) {
         kept++;
         return true;   // 保留整个主评论 + 所有子回复
       } else {
