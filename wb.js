@@ -1,5 +1,5 @@
-// Quantumult X - 微博北京主评论过滤（已修复翻页bug）
-// 特点：无北京评论时显示全部以继续翻页；有则只显示北京；广告全部移除
+// Quantumult X - 微博严格北京主评论过滤（最终无干扰版）
+// 效果：有北京主评论就只显示它；无北京时页面完全空白（无干扰）；广告全删；翻页正常
 
 let body = $response.body;
 if (!body) $done({});
@@ -23,30 +23,38 @@ try {
 
       // 3. 只判断主评论是否北京
       const data = item.data;
-      const loc = (data.user?.location || "") + (data.source || "");
+      const loc =  (data.source || "");
 
-      if (loc.includes("来自北京")) {
+      if (loc.includes("北京")) {
         kept++;
-        return true;   // 保留整个主评论（含所有子回复）
+        return true;   // 保留整个主评论 + 子回复
       } else {
         removedNonBj++;
         return false;
       }
     });
 
-    // 【关键修复】如果本页过滤后完全为空，则不做过滤，返回原始数据，让客户端继续翻页
-    if (newItems.length === 0 && obj.items.length > 0) {
-      console.log(`[北京过滤] 本页无北京评论 → 返回原始数据，继续翻页`);
-      $done({ body });
-      return;
+    // 【关键】当本页没有北京主评论时
+    // → 页面完全空白（不显示任何内容，无干扰）
+    // → 但强制保留翻页能力，保证能继续上拉翻下一页
+    if (newItems.length === 0) {
+      console.log(`[北京严格过滤] 本页无北京评论 → 页面完全空白，继续翻页`);
+      obj.items = [];  // 清空所有内容
+      // 强制保持翻页参数
+      if (obj.loadedInfo && obj.loadedInfo.paging) {
+        obj.loadedInfo.paging.has_more = true;
+      }
+      if (obj.max_id) {
+        // 保留max_id，让客户端认为还有下一页
+      }
+    } else {
+      obj.items = newItems;
     }
-
-    obj.items = newItems;
   }
 
-  console.log(`[北京过滤] ✅ 广告移除:${removedAd} | 非北京主评论移除:${removedNonBj} | 保留北京:${kept}`);
+  console.log(`[北京严格过滤] ✅ 广告移除:${removedAd} | 非北京主评论移除:${removedNonBj} | 保留北京主评论:${kept}`);
   $done({ body: JSON.stringify(obj) });
 } catch (e) {
-  console.log(`[北京过滤] 错误: ${e}`);
+  console.log(`[北京严格过滤] 错误: ${e}`);
   $done({ body });
 }
