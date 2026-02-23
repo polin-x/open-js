@@ -25,7 +25,8 @@ try {
 
       // 3. 只判断主评论是否北京
       const data = item.data;
-      const loc = (data.user?.location || "") + (data.source || "");
+      // const loc = (data.user?.location || "") + (data.source || "");
+      const loc = (data.source || "");
       
       if (loc.includes("北京")) {
         kept++;
