@@ -13,7 +13,7 @@ try {
 
     obj.data.comments.forEach(comment => {
       // 检查主评论
-      if (comment.ip_location === "北京") {
+      if (comment.ip_location === "北京")|| (comment.ip_location === "河北") ||(comment.ip_location === "山东") {
         
         newComments.push(comment);
       }
